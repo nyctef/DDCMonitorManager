@@ -44,3 +44,5 @@ Temporary Items
 *.suo
 DDCMonitorManager/bin/*
 DDCMonitorManager/obj/*
+.vs/
+packages/
