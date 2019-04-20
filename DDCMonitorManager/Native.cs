@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -9,6 +10,93 @@ namespace DDCMonitorManager
 {
     class NativeCalls
     {
+        // some code based on pinvoke.net samples
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        internal struct MonitorInfoEx
+        {
+            public int Size;
+
+            /// <summary> total monitor size </summary>
+            public Rect Monitor;
+
+            /// <summary> usable space </summary>
+            public Rect WorkArea;
+
+            /// <summary> 1 if this is the primary monitor </summary>
+            public uint Flags;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public string DeviceName;
+
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct Rect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+            public int Width => Right - Left;
+            public int Height => Bottom - Top;
+        }
+
+
+        delegate bool MonitorEnumDelegate(IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData);
+
+        /// <summary>
+        /// The struct that contains the display information
+        /// </summary>
+        public class DisplayInfo
+        {
+            public string Availability { get; set; }
+            public string ScreenHeight { get; set; }
+            public string ScreenWidth { get; set; }
+            public Rect MonitorArea { get; set; }
+            public Rect WorkArea { get; set; }
+        }
+
+        /// <summary>
+        /// Returns the number of Displays using the Win32 functions
+        /// </summary>
+        /// <returns>collection of Display Info</returns>
+        public static IReadOnlyCollection<MonitorInfoEx> EnumDisplayMonitors()
+        {
+            var result = new List<MonitorInfoEx>();
+
+            var enumSuccess = EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
+                delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
+                {
+                    var mi = new MonitorInfoEx();
+                    mi.Size = Marshal.SizeOf(mi);
+
+                    bool success = GetMonitorInfo(hMonitor, ref mi);
+                    if (!success)
+                    {
+                        Console.Error.WriteLine(new Win32Exception());
+                    } else { 
+
+                    result.Add(mi);
+                    }
+                    // say we want to continue enumerating
+                    return true;
+                }, IntPtr.Zero);
+
+            if (!enumSuccess)
+            {
+                throw new Win32Exception();
+            }
+
+            return result.AsReadOnly();
+        }
+
+        [DllImport("user32.dll")]
+        static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumDelegate lpfnEnum, IntPtr dwData);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        static extern bool GetMonitorInfo(IntPtr hMonitor, ref MonitorInfoEx lpmi);
+
         [DllImport("user32.dll", EntryPoint = "MonitorFromWindow", SetLastError = true)]
         public static extern IntPtr MonitorFromWindow(
             [In] IntPtr hwnd, uint dwFlags);

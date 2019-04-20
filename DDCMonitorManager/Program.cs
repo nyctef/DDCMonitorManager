@@ -16,6 +16,18 @@ namespace DDCMonitorManager
             {
                 new Application().Run(new MainWindow());
             }
+
+            if (args[0] == "list")
+            {
+                var monitors = NativeCalls.EnumDisplayMonitors();
+                foreach (var monitor in monitors)
+                {
+                    Console.WriteLine($"{monitor.DeviceName}: {monitor.Monitor.Width}x{monitor.Monitor.Height}");
+                }
+                Console.ReadKey();
+            }
+
+
             return 0;
         }
     }

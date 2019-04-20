@@ -1,0 +1,7 @@
+overall goal: multiple sliders in WPF app with monitor names
+
+- get actual monitor names   
+  - (https://stackoverflow.com/questions/20060584/get-the-name-of-a-monitor ?)
+- only show console window if not running as WPF app
+  - something like https://stackoverflow.com/questions/160587/no-output-to-console-from-a-wpf-application
+- convert to new-style csproj
